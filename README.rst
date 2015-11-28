@@ -1,6 +1,6 @@
-====================
-Widukind Environment
-====================
+===============
+Widukind Docker
+===============
 
 **Features:**
 
