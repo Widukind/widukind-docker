@@ -1,0 +1,56 @@
+datashared:
+  image: tianon/true
+  volumes:
+    - ./widukind:/widukind
+
+mongodb:
+  image: mongo:3.0.7
+  command: mongod --bind_ip 0.0.0.0 --smallfiles --noauth --directoryperdb
+  volumes:
+    - ./mongodb/data:/data/db
+  volumes_from:
+    - datashared
+
+redis:
+  image: redis:latest
+  command: redis-server --appendonly yes
+  volumes:
+    - ./redis/data:/data
+  volumes_from:
+    - datashared
+
+search:
+  build: docker-elasticsearch
+  volumes:
+    - ./elasticsearch/data:/usr/share/elasticsearch/data
+    - ./docker-elasticsearch/config:/usr/share/elasticsearch/config
+    #- elasticsearch/logs:/usr/share/elasticsearch/logs
+  volumes_from:
+    - datashared
+  environment:
+    ES_HEAP_SIZE: 1g
+    ES_MIN_MEM: 512m
+    ES_MAX_MEM: 1g
+
+cli:
+  build: dlstats
+  env_file:
+    - ./docker_environ
+  links:
+    - mongodb:mongodb
+    - search:elasticsearch
+    - redis:redis
+  volumes_from:
+    - datashared
+
+web:
+  build: widukind-web
+  env_file:
+    - ./docker_environ
+  links:
+    - mongodb:mongodb    
+    - redis:redis
+  ports:
+    - "HOST_BIND_WEB:80:8080"
+  volumes_from:
+    - datashared
