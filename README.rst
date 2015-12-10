@@ -28,9 +28,27 @@ Resume Installation
     # Replace 1.1.1.1 with your ip address
     $ sudo sed -i 's/HOST_BIND_WEB/1.1.1.1/' docker-compose.yml
     
+    # Edit ./docker_environ for adap configuration
+    $ vi ./docker_environ
+    
     $ docker-compose up -d
     
     # Go to http://1.1.1.1
+    
+Configuration
+-------------
+
+Edit ./docker_environ before launch docker-compose up
+
+::
+
+    WIDUKIND_SECRET_KEY=examplesecretkey
+    WIDUKIND_WEB_MAIL_DEFAULT_SENDER=root@localhost.com
+    WIDUKIND_WEB_MAIL_ADMIN=root@localhost.com
+    WIDUKIND_WEB_SERVER_NAME=localhost
+    WIDUKIND_WEB_USERNAME=admin
+    WIDUKIND_WEB_PASSWORD=admin
+    WIDUKIND_WEB_MAIL_SERVER=localhost        
     
 Resume for load datas
 ---------------------
