@@ -2,8 +2,6 @@
 ### Common ###
 WIDUKIND_MONGODB_URL=mongodb://mongodb/widukind
 WIDUKIND_MONGODB_NAME=widukind
-WIDUKIND_ES_URL=http://elasticsearch:9200
-WIDUKIND_ES_INDEX=widukind
 WIDUKIND_REDIS_URL=redis://redis:6379/0
 
 ### widukind-web ###
