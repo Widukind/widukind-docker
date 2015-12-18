@@ -62,9 +62,6 @@ Resume for load datas
     # help with:
     dlstats --help
     
-    # Create ES index    
-    dlstats es create-index -S
-
     # Provider list:    
     dlstats fetchers list
 
