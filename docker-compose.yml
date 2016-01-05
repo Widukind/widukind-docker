@@ -5,7 +5,7 @@ datashared:
 
 mongodb:
   image: mongo:3.2.0
-  command: mongod --bind_ip 0.0.0.0 --smallfiles --noauth --directoryperdb --wiredTigerDirectoryForIndexes
+  command: mongod --noauth
   volumes:
     - ./mongodb/data:/data/db
   volumes_from:
