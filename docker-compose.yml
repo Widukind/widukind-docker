@@ -4,8 +4,8 @@ datashared:
     - ./widukind:/widukind
 
 mongodb:
-  image: mongo:3.0.7
-  command: mongod --bind_ip 0.0.0.0 --smallfiles --noauth --directoryperdb
+  image: mongo:3.2.0
+  command: mongod --bind_ip 0.0.0.0 --smallfiles --noauth --directoryperdb --wiredTigerDirectoryForIndexes
   volumes:
     - ./mongodb/data:/data/db
   volumes_from:
