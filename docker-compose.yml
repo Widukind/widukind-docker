@@ -4,12 +4,13 @@ datashared:
     - ./widukind:/widukind
 
 mongodb:
-  image: mongo:3.2.0
-  command: mongod --noauth
+  build: mongodb-docker
+  command: mongod --noauth --storageEngine wiredTiger
   volumes:
     - ./mongodb/data:/data/db
   volumes_from:
     - datashared
+  privileged: true
 
 redis:
   build: redis-docker
