@@ -31,6 +31,8 @@ Resume Installation
     # Edit ./docker_environ for adap configuration
     $ vi ./docker_environ
     
+    $ docker-compose pull
+    
     $ docker-compose up -d
     
     # Go to http://1.1.1.1
