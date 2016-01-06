@@ -4,21 +4,33 @@ datashared:
     - ./widukind:/widukind
 
 mongodb:
-  image: mongo:3.2.0
-  command: mongod --bind_ip 0.0.0.0 --smallfiles --noauth --directoryperdb --wiredTigerDirectoryForIndexes
+  build: mongodb-docker
+  command: mongod --noauth --storageEngine wiredTiger
   volumes:
     - ./mongodb/data:/data/db
   volumes_from:
     - datashared
+  privileged: true
 
 redis:
-  image: redis:latest
+  build: redis-docker
   command: redis-server --appendonly yes
   volumes:
     - ./redis/data:/data
   volumes_from:
     - datashared
+  privileged: true
 
+cli:
+  build: dlstats
+  env_file:
+    - ./docker_environ
+  links:
+    - mongodb:mongodb
+    - redis:redis
+  volumes_from:
+    - datashared
+    
 web:
   build: widukind-web
   env_file:
