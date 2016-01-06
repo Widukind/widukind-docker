@@ -1,4 +1,4 @@
-FROM mongo:3.0.8
+FROM mongo:3.2.0
 
 RUN apt-get update -q \
     && apt-get install -y --no-install-recommends procps \
