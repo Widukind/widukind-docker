@@ -19,6 +19,16 @@ redis:
   volumes_from:
     - datashared
 
+cli:
+  build: dlstats
+  env_file:
+    - ./docker_environ
+  links:
+    - mongodb:mongodb
+    - redis:redis
+  volumes_from:
+    - datashared
+    
 web:
   build: widukind-web
   env_file:

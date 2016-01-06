@@ -23,6 +23,7 @@ Resume Installation
     $ cd widukind
     
     $ git clone https://github.com/Widukind/widukind-web.git
+    $ git clone https://github.com/Widukind/dlstats.git
     
     # Replace 1.1.1.1 with your ip address
     $ sudo sed -i 's/HOST_BIND_WEB/1.1.1.1/' docker-compose.yml
@@ -56,7 +57,7 @@ Resume for load datas
 
     # run this commands in ./widukind directory
     
-    alias dlstats='docker-compose run --rm --no-deps web dlstats'
+    alias dlstats='docker-compose run --rm --no-deps cli dlstats'
     
     # help with:
     dlstats --help
