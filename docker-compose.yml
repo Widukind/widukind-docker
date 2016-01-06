@@ -12,12 +12,13 @@ mongodb:
     - datashared
 
 redis:
-  image: redis:latest
+  build: redis-docker
   command: redis-server --appendonly yes
   volumes:
     - ./redis/data:/data
   volumes_from:
     - datashared
+  privileged: true
 
 cli:
   build: dlstats
