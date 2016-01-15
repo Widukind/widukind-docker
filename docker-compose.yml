@@ -42,3 +42,16 @@ web:
     - "HOST_BIND_WEB:80:8080"
   volumes_from:
     - datashared
+
+api:
+  build: widukind-api
+  env_file:
+    - ./docker_environ
+  links:
+    - mongodb:mongodb    
+    - redis:redis
+  ports:
+    - "HOST_BIND_API:80:8080"
+  volumes_from:
+    - datashared
+    

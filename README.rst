@@ -7,6 +7,7 @@ Widukind Docker
 * `Dlstats`_
 * `pySDMX`_
 * `Widukind Web`_
+* `Widukind Rest Api`_
 
 Resume Installation
 -------------------
@@ -23,10 +24,14 @@ Resume Installation
     $ cd widukind
     
     $ git clone https://github.com/Widukind/widukind-web.git
+    $ git clone https://github.com/Widukind/widukind-api.git
     $ git clone https://github.com/Widukind/dlstats.git
     
     # Replace 1.1.1.1 with your ip address
     $ sudo sed -i 's/HOST_BIND_WEB/1.1.1.1/' docker-compose.yml
+    
+    # Replace 1.1.1.2 with your ip address or change port in docker-compose.yml file
+    $ sudo sed -i 's/HOST_BIND_API/1.1.1.2/' docker-compose.yml
     
     # Edit ./docker_environ for adap configuration
     $ vi ./docker_environ
@@ -79,4 +84,5 @@ Resume for load datas
 .. _`Dlstats`: https://github.com/Widukind/dlstats
 .. _`pySDMX`: https://github.com/Widukind/pysdmx
 .. _`Widukind Web`: https://github.com/Widukind/widukind-web
+.. _`Widukind Rest Api`: https://github.com/Widukind/widukind-api
 
