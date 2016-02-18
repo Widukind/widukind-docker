@@ -1,3 +1,8 @@
+TMPDIR=/tmpdir
+
+### dlstats ###
+WIDUKIND_CACHE_URL=redis://redis:6379/0
+WIDUKIND_SCHEMAS_VALIDATION_DISABLE=true
 
 ### Common ###
 WIDUKIND_MONGODB_URL=mongodb://mongodb/widukind
@@ -21,6 +26,10 @@ WIDUKIND_WEB_LOGGING_MAIL_ENABLE=True
 WIDUKIND_WEB_MAIL_PORT=25
 WIDUKIND_WEB_MAIL_USE_TLS=False
 WIDUKIND_WEB_MAIL_USE_SSL=False
+
+WIDUKIND_BASE_URL_API_EVIEWS=http://widukind-api.cepremap.org/api/v1/eviews
+WIDUKIND_BASE_URL_API_JSON=http://widukind-api.cepremap.org/api/v1/json
+WIDUKIND_BASE_URL_API_R=http://widukind-api.cepremap.org/api/v1/r
 
 WIDUKIND_DEBUG=false
 WIDUKIND_ENABLE_CACHE=true

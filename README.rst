@@ -5,7 +5,6 @@ Widukind Docker
 **Features:**
 
 * `Dlstats`_
-* `pySDMX`_
 * `Widukind Web`_
 * `Widukind Rest Api`_
 
@@ -65,15 +64,26 @@ Resume for load datas
     # run this commands in ./widukind directory
     
     alias dlstats='docker-compose run --rm --no-deps cli dlstats'
-    
+    or
+    alias dlstats_bash='docker-compose run --rm --no-deps cli bash'
+        
     # help with:
     dlstats --help
     
     # Provider list:    
     dlstats fetchers list
 
+    # Datasets list for BIS:    
+    dlstats fetchers datasets -f BIS
+
+    # Create or Update datatree for BIS (--force for replace)
+    dlstats fetchers datatree -f BIS
+
     # Load Fetcher BIS - CNFS dataset
     dlstats fetchers run -l ERROR -f BIS -d CNFS
+
+    # Load Fetcher BIS with before update datatree
+    dlstats fetchers run --datatree -l ERROR -f BIS -d CNFS
 
     # Load Fetcher BIS - All datasets
     dlstats fetchers run -l ERROR -f BIS
@@ -82,7 +92,6 @@ Resume for load datas
     dlstats fetchers report
     
 .. _`Dlstats`: https://github.com/Widukind/dlstats
-.. _`pySDMX`: https://github.com/Widukind/pysdmx
 .. _`Widukind Web`: https://github.com/Widukind/widukind-web
 .. _`Widukind Rest Api`: https://github.com/Widukind/widukind-api
 
