@@ -2,10 +2,11 @@ datashared:
   image: tianon/true
   volumes:
     - ./widukind:/widukind
+    - ./tmp:/tmpdir
 
 mongodb:
   build: mongodb-docker
-  command: mongod --noauth --storageEngine wiredTiger --wiredTigerCacheSizeGB 1 --wiredTigerDirectoryForIndexes --httpinterface --cpu --directoryperdb --rest
+  command: mongod --noauth --storageEngine wiredTiger --wiredTigerCacheSizeGB 1 --wiredTigerDirectoryForIndexes --httpinterface --cpu --directoryperdb
   volumes:
     - ./mongodb/data:/data/db
   volumes_from:
@@ -54,4 +55,3 @@ api:
     - "HOST_BIND_API:80:8080"
   volumes_from:
     - datashared
-    
