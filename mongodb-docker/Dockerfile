@@ -7,7 +7,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   curl \
   && rm -rf /var/lib/apt/lists/*
   
-ENV MONGO_RELEASE 3.2.0
+ENV MONGO_RELEASE 3.2.1
 
 RUN curl -O https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-$MONGO_RELEASE.tgz \
 	&& tar -zxvf mongodb-linux-x86_64-$MONGO_RELEASE.tgz \
