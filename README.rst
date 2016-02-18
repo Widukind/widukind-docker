@@ -21,6 +21,10 @@ Resume Installation
 
     $ sudo git clone https://github.com/Widukind/widukind-docker.git widukind
     $ cd widukind
+
+    $ git clone https://github.com/Widukind/docker-base.git common
+    $ docker build -t widukind/docker-base:0.1.0 common
+    $ docker tag widukind/docker-base:0.1.0 widukind/docker-base:latest
     
     $ git clone https://github.com/Widukind/widukind-web.git
     $ git clone https://github.com/Widukind/widukind-api.git
