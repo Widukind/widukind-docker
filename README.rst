@@ -176,7 +176,7 @@ Installation with Mongodb Sharding and Nginx proxy / dns discovery (comming soon
     $ sudo git clone https://github.com/Widukind/widukind-docker.git widukind
     $ cd widukind
     
-    # Use docker-compose -f docker-compose-shard.yml or rename docker-compose-shard.yml to docker-compose.yml
+    # Use docker-compose -f docker-compose-shard.yml or rename docker-compose-shard.yml to docker-compose.yml or export COMPOSE_FILE=docker-compose-shard.yml
 
     $ git clone https://github.com/Widukind/widukind-web.git
     $ git clone https://github.com/Widukind/widukind-api.git
@@ -193,9 +193,28 @@ Installation with Mongodb Sharding and Nginx proxy / dns discovery (comming soon
     
     $ docker-compose -f docker-compose-shard.yml pull
     
-    $ docker-compose -f docker-compose-shard.yml up -d
+    $ docker-compose -f docker-compose-shard.yml up -d --build
     
-    $ docker-compose run --rm --no-deps cli dlstats install
+    $ docker exec -it mongod1 mongo --port 27018
+    > rs.initiate( {
+       _id: "widukind",
+       version: 1,
+       members: [
+          { _id: 0, host: "mongodb1:27018" },
+          { _id: 1, host: "mongodb2:27018" },
+          { _id: 2, host: "mongodb3:27018" }
+       ]
+    })
+    > exit
+
+    $ docker exec -it mongorouter1 mongo
+    > sh.addShard("widukind/mongodb1:27018")
+    > sh.status()
+    > exit
+    
+    #$ docker-compose run --rm --no-deps cli dlstats install
+
+    $ docker-compose run --rm --no-deps cli dlstats mongo reindex -S
     
     $ docker-compose restart web
     
