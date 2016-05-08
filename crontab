@@ -1,0 +1,30 @@
+# BIS - All days - 01H01 AM
+01 01 * * * root nice -n 19 su -c "/home/persist/widukind-prod/fetcher-run.sh BIS"
+
+# ECB - All days - 02H01 AM
+01 02 * * * root nice -n 19 su -c "/home/persist/widukind-prod/fetcher-run.sh ECB"
+
+# FED - All days - 03H01 AM
+#01 03 * * * root nice -n 19 su -c "/home/persist/widukind-prod/fetcher-run.sh FED"
+
+# IMF - All days - 04H01 AM
+#01 04 * * * root nice -n 19 su -c "/home/persist/widukind-prod/fetcher-run.sh IMF"
+
+# ESRI - All days - 05H01 AM
+01 05 * * * root nice -n 19 su -c "/home/persist/widukind-prod/fetcher-run.sh ESRI"
+
+# OECD - All days - 06H30 AM
+#30 06 * * * root nice -n 19 su -c "/home/persist/widukind-prod/fetcher-run.sh OECD"
+
+# WORLDBANK - All days - 07H01 AM
+# 01 07 * * * root nice -n 19 su -c "/home/persist/widukind-prod/fetcher-run.sh WORLDBANK"
+
+# INSEE - All days - 08H50 AM
+50 08 * * * root nice -n 19 su -c "/home/persist/widukind-prod/fetcher-run-INSEE.sh"
+
+# BEA - All days - 09H01 AM
+01 09 * * * root nice -n 19 su -c "/home/persist/widukind-prod/fetcher-run.sh BEA"
+
+# Eurostat - All days - 11H01 AM and 11H01 PM
+#01 11 * * * root nice -n 19 su -c "/home/persist/widukind-prod/fetcher-run.sh EUROSTAT"
+01 23 * * * root nice -n 19 su -c "/home/persist/widukind-prod/fetcher-run.sh EUROSTAT"
