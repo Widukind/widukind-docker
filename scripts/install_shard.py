@@ -7,6 +7,16 @@ docker-compose run --rm --no-deps cli python /scripts/install_shard.py
 
 # All remove
 docker-compose down -v --rmi local
+
+replSetInitiate
+    ERROR :  already initialized <class 'pymongo.errors.OperationFailure'>
+
+Add shard...
+    ERROR :  E11000 duplicate key error collection: config.shards index: _id_ dup key: { : "widukind" } <class 'pymongo.errors.DuplicateKeyError'>
+
+Configure sharding for widukind database...
+    ERROR :  sharding already enabled for database widukind <class 'pymongo.errors.OperationFailure'>
+
 """
 
 import sys
@@ -14,6 +24,7 @@ import time
 import os
 
 from pymongo import MongoClient
+from pymongo import ASCENDING, DESCENDING
 
 class constants:
     MONGODB_URL = os.environ.get("WIDUKIND_MONGODB_URL", "mongodb://localhost/widukind")
@@ -40,16 +51,19 @@ def create_or_update_indexes(db, force_mode=False, background=False):
 
     db[constants.COL_PROVIDERS].create_index([
         ("slug", ASCENDING)], 
-        name="slug_idx", unique=True, background=background)
+        name="slug_idx", background=background)
 
+    """
     db[constants.COL_PROVIDERS].create_index([
         ("name", ASCENDING)], 
-        name="name_idx", 
+        name="name_idx",
+        unique=True,  
         background=background)
+    """
 
     db[constants.COL_CATEGORIES].create_index([
         ("slug", ASCENDING)], 
-        name="slug_idx", unique=True, background=background)
+        name="slug_idx", background=background)
 
     db[constants.COL_CATEGORIES].create_index([
         ('provider_name', ASCENDING), 
@@ -64,17 +78,20 @@ def create_or_update_indexes(db, force_mode=False, background=False):
 
     db[constants.COL_DATASETS].create_index([
         ("slug", ASCENDING)], 
-        name="slug_idx", unique=True, background=background)
+        name="slug_idx", background=background)
 
     db[constants.COL_DATASETS].create_index([
         ("tags", ASCENDING)], 
         name="tags_idx", background=background)
-    
+
+    """    
     db[constants.COL_DATASETS].create_index([
         ('provider_name', ASCENDING), 
         ("dataset_code", ASCENDING)], 
-        name="datasets1", 
+        name="datasets1",
+        unique=True,  
         background=background)
+    """
 
     db[constants.COL_DATASETS].create_index([
         ('provider_name', ASCENDING), 
@@ -88,16 +105,18 @@ def create_or_update_indexes(db, force_mode=False, background=False):
 
     db[constants.COL_SERIES].create_index([
         ("slug", ASCENDING)], 
-        name="slug_idx", unique=True, background=background)
+        name="slug_idx", background=background)
 
+    """
     db[constants.COL_SERIES].create_index([
         ('provider_name', ASCENDING), 
         ("dataset_code", ASCENDING), 
-        #("key", ASCENDING)
-        ], 
+        ("key", ASCENDING)], 
         name="series1", 
+        unique=True, 
         background=background)
-
+    """
+    
     db[constants.COL_SERIES].create_index([
         ("dimensions", ASCENDING)], 
         name="series2", background=background)
@@ -119,9 +138,11 @@ def create_or_update_indexes(db, force_mode=False, background=False):
         ("end_ts", ASCENDING)], 
         name="series8", background=background)
 
+    """
     db[constants.COL_TAGS].create_index([
         ("name", ASCENDING)], 
         name="name_idx", unique=True, background=background)
+    """
 
     db[constants.COL_TAGS].create_index([
         ("count", DESCENDING)], 
@@ -139,19 +160,22 @@ def create_or_update_indexes(db, force_mode=False, background=False):
         background=background,
         partialFilterExpression={"count_series": {"$exists": True}})
 
-
 print("Connect to first mongodb server...")
-client_mongodb1 = MongoClient('mongodb1', 27018)
-config = {
-    '_id': 'widukind', 
-    'members': [
-        {'_id': 0, 'host': 'mongodb1:27018'}, 
-        {'_id': 1, 'host': 'mongodb2:27018'}, 
-        {'_id': 2, 'host': 'mongodb3:27018'}
-    ]
-}
-client_mongodb1.admin.command("replSetInitiate", config)
-print("Replicaset initialize: OK")
+try:
+    client_mongodb1 = MongoClient('mongodb1', 27018)
+    config = {
+        '_id': 'widukind', 
+        'members': [
+            {'_id': 0, 'host': 'mongodb1:27018'}, 
+            {'_id': 1, 'host': 'mongodb2:27018'}, 
+            {'_id': 2, 'host': 'mongodb3:27018'}
+        ]
+    }
+    client_mongodb1.admin.command("replSetInitiate", config)
+    print("Replicaset initialize: OK")
+except Exception as err:
+    print("ERROR : ", str(err))
+    abort()
 
 cpt = 0
 max = 60
@@ -184,8 +208,9 @@ create_or_update_indexes(mongodb1_replicaset.widukind)
 print("Configure sharding for widukind database...")
 try:
     router.admin.command("enableSharding", "widukind")
-    router.admin.command("shardCollection", "widukind.series", key={ "slug": 1 })
-    router.admin.command("shardCollection", "widukind.datasets", key={ "slug": 1 })
+    router.admin.command("shardCollection", "widukind.providers", key={ "name": 1 })
+    router.admin.command("shardCollection", "widukind.series", key={ "provider_name": 1, "dataset_code": 1, "key": 1 })
+    router.admin.command("shardCollection", "widukind.datasets", key={ "provider_name": 1, "dataset_code": 1 })
     print("Configuration : OK")
 except Exception as err:
     print("ERROR : ", str(err))
