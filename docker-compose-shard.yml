@@ -1,0 +1,229 @@
+version: '2'
+
+networks:
+  app_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.16.238.0/24
+        gateway: 172.16.238.1
+
+services:
+
+  skydns:
+    image: crosbymichael/skydns
+    command: -nameserver 8.8.8.8:53 -domain docker -secret azerty -http 0.0.0.0:8080 -dns 0.0.0.0:53
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.2
+
+  skydock:
+    image: crosbymichael/skydock
+    command: -ttl 30 -environment dev -s /docker.sock -domain docker -name skydns -secret azerty
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.3
+    volumes:
+      - /var/run/docker.sock:/docker.sock
+    depends_on:
+      - skydns
+
+  proxy:
+    image: jwilder/nginx-proxy
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    dns: 172.16.238.2
+    dns_search: docker
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.4
+    depends_on:
+      - skydns
+  
+  datashared:
+    image: tianon/true
+    volumes:
+      - ./widukind:/widukind
+      - ./tmp:/tmpdir
+  
+  mongodb1:
+    image: mongo:3.2.4
+    command: mongod --replSet widukind --shardsvr --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --directoryperdb
+    volumes:
+      - ./mongodb/mongodb1/data:/data/db
+    volumes_from:
+      - datashared
+    #hostname: mongodb1.mongo.dev.docker
+    container_name: mongodb1
+    dns: 172.16.238.2
+    dns_search: docker
+    expose:
+      - "27018"
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.10
+    extra_hosts:
+     - "mongodb2:172.16.238.11"
+     - "mongodb3:172.16.238.12"
+    depends_on:
+      - skydock
+    mem_limit: 1g
+
+  mongodb2:
+    image: mongo:3.2.4
+    command: mongod --replSet widukind --shardsvr --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --directoryperdb
+    volumes:
+      - ./mongodb/mongodb2/data:/data/db
+    volumes_from:
+      - datashared
+    container_name: mongodb2
+    dns: 172.16.238.2
+    dns_search: docker
+    expose:
+      - "27018"
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.11
+    extra_hosts:
+     - "mongodb1:172.16.238.10"
+     - "mongodb3:172.16.238.12"
+    depends_on:
+      - skydock
+    mem_limit: 1g
+
+  mongodb3:
+    image: mongo:3.2.4
+    command: mongod --replSet widukind --shardsvr --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --directoryperdb
+    volumes:
+      - ./mongodb/mongodb3/data:/data/db
+    volumes_from:
+      - datashared
+    container_name: mongodb3
+    dns: 172.16.238.2
+    dns_search: docker
+    expose:
+      - "27018"
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.12
+    extra_hosts:
+     - "mongodb1:172.16.238.10"
+     - "mongodb2:172.16.238.11"
+    depends_on:
+      - skydock
+    mem_limit: 1g
+
+  mongoconfig1:
+    image: mongo:3.2.4
+    command: mongod --configsvr --port 27019 --dbpath /data/db --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --directoryperdb
+    links:
+      - mongodb1:mongodb1
+      - mongodb2:mongodb2
+      - mongodb3:mongodb3
+    volumes:
+      - ./mongodb/mongoconfig1/data:/data/db
+    volumes_from:
+      - datashared
+    container_name: mongoconfig1
+    dns: 172.16.238.2
+    dns_search: docker
+    expose:
+      - "27019"
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.20
+
+  mongorouter1:
+    image: mongo:3.2.4
+    command: mongos --bind_ip 0.0.0.0 --port 27017 --configdb mongoconfig1:27019
+    links:
+      - mongoconfig1:mongoconfig1
+      - mongodb1:mongodb1
+      - mongodb2:mongodb2
+      - mongodb3:mongodb3
+    volumes_from:
+      - datashared
+    container_name: mongorouter1
+    dns: 172.16.238.2
+    dns_search: docker
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.30
+    depends_on:
+      - skydock
+
+  redis:
+    build:
+      context: ./redis-docker
+    command: redis-server --appendonly yes
+    volumes:
+      - ./redis/data:/data
+    volumes_from:
+      - datashared
+    privileged: true
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.40
+    depends_on:
+      - skydock
+    mem_limit: 512m
+
+  cli:
+    build:
+      context: ./dlstats
+    env_file:
+      - ./docker_environ
+    links:
+      - mongorouter1:mongodb
+      - redis:redis
+    volumes_from:
+      - datashared
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.41
+    depends_on:
+      - skydock      
+
+  web:
+    build:
+      context: ./widukind-web
+    env_file:
+      - ./docker_environ
+    links:
+      - mongorouter1:mongodb
+      - redis:redis
+    environment:
+      VIRTUAL_HOST: www.mydomain.org
+      VIRTUAL_PORT: 8080
+    volumes_from:
+      - datashared
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.42
+    depends_on:
+      - skydock
+    mem_limit: 1g
+
+  api:
+    build:
+      context: ./widukind-api
+    env_file:
+      - ./docker_environ
+    links:
+      - mongorouter1:mongodb
+      - redis:redis
+    environment:
+      VIRTUAL_HOST: api.mydomain.org
+      VIRTUAL_PORT: 8080
+    volumes_from:
+      - datashared
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.43
+    depends_on:
+      - skydock
+    mem_limit: 1g
+      
