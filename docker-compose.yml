@@ -5,8 +5,8 @@ datashared:
     - ./tmp:/tmpdir
 
 mongodb:
-  build: mongodb-docker
-  command: mongod --noauth --storageEngine wiredTiger --wiredTigerCacheSizeGB 1 --wiredTigerDirectoryForIndexes --httpinterface --cpu --directoryperdb
+  image: mongo:3.2.4
+  command: mongod --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --directoryperdb
   volumes:
     - ./mongodb/data:/data/db
   volumes_from:
