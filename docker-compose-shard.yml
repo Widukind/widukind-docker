@@ -17,6 +17,7 @@ services:
     networks:
       app_net:
         ipv4_address: 172.16.238.2
+    container_name: skydns
 
   skydock:
     image: crosbymichael/skydock
@@ -40,6 +41,8 @@ services:
     networks:
       app_net:
         ipv4_address: 172.16.238.4
+    environment:
+      DEFAULT_HOST: www.mydomain.org
     depends_on:
       - skydns
   
@@ -51,7 +54,7 @@ services:
   
   mongodb1:
     image: mongo:3.2.4
-    command: mongod --replSet widukind --shardsvr --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --directoryperdb
+    command: mongod --replSet widukind --shardsvr --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --rest --httpinterface
     volumes:
       - ./mongodb/mongodb1/data:/data/db
     volumes_from:
@@ -71,10 +74,11 @@ services:
     depends_on:
       - skydock
     mem_limit: 1g
+    user: mongodb
 
   mongodb2:
     image: mongo:3.2.4
-    command: mongod --replSet widukind --shardsvr --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --directoryperdb
+    command: mongod --replSet widukind --shardsvr --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --rest --httpinterface
     volumes:
       - ./mongodb/mongodb2/data:/data/db
     volumes_from:
@@ -93,10 +97,11 @@ services:
     depends_on:
       - skydock
     mem_limit: 1g
+    user: mongodb
 
   mongodb3:
     image: mongo:3.2.4
-    command: mongod --replSet widukind --shardsvr --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --directoryperdb
+    command: mongod --replSet widukind --shardsvr --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --rest --httpinterface
     volumes:
       - ./mongodb/mongodb3/data:/data/db
     volumes_from:
@@ -115,10 +120,11 @@ services:
     depends_on:
       - skydock
     mem_limit: 1g
+    user: mongodb
 
   mongoconfig1:
     image: mongo:3.2.4
-    command: mongod --configsvr --port 27019 --dbpath /data/db --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --directoryperdb
+    command: mongod --configsvr --port 27019 --dbpath /data/db --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --rest --httpinterface
     links:
       - mongodb1:mongodb1
       - mongodb2:mongodb2
@@ -135,10 +141,11 @@ services:
     networks:
       app_net:
         ipv4_address: 172.16.238.20
+    user: mongodb
 
   mongorouter1:
     image: mongo:3.2.4
-    command: mongos --bind_ip 0.0.0.0 --port 27017 --configdb mongoconfig1:27019
+    command: mongos --configdb mongoconfig1:27019 --httpinterface
     links:
       - mongoconfig1:mongoconfig1
       - mongodb1:mongodb1
@@ -154,6 +161,7 @@ services:
         ipv4_address: 172.16.238.30
     depends_on:
       - skydock
+    user: mongodb
 
   redis:
     build:
@@ -181,6 +189,8 @@ services:
       - redis:redis
     volumes_from:
       - datashared
+    volumes:
+      - ./scripts:/scripts
     networks:
       app_net:
         ipv4_address: 172.16.238.41
