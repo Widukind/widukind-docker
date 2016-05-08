@@ -1,0 +1,86 @@
+datashared:
+  image: tianon/true
+  volumes:
+    - ./widukind:/widukind
+    - ./tmp:/tmpdir
+
+dns:
+  image: andyshinn/dnsmasq
+  ports:
+    - "172.17.0.1:53:53/udp"
+  cap_add:
+    - NET_ADMIN
+  dns:    
+    - 8.8.8.8
+
+proxy:
+  image: jwilder/nginx-proxy
+  ports:
+    - "80:80"
+  volumes:
+    - /var/run/docker.sock:/tmp/docker.sock:ro
+  dns:    
+    - 172.17.0.1
+    
+mongodb:
+  image: mongo:3.2.4
+  command: mongod --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --directoryperdb
+  volumes:
+    - ./mongodb/data:/data/db
+  volumes_from:
+    - datashared
+  privileged: true
+
+redis:
+  build: redis-docker
+  command: redis-server --appendonly yes
+  volumes:
+    - ./redis/data:/data
+  volumes_from:
+    - datashared
+  privileged: true
+
+cli:
+  build: dlstats
+  env_file:
+    - ./docker_environ
+  links:
+    - mongodb:mongodb
+    - redis:redis
+  volumes_from:
+    - datashared
+  dns:    
+    - 172.17.0.1
+    - 8.8.8.8
+    
+web:
+  build: widukind-web
+  env_file:
+    - ./docker_environ
+  environment:
+    VIRTUAL_HOST: www.mydomain.org
+    VIRTUAL_PORT: 8080
+  links:
+    - mongodb:mongodb    
+    - redis:redis
+  volumes_from:
+    - datashared
+  dns:    
+    - 172.17.0.1
+    - 8.8.8.8
+
+api:
+  build: widukind-api
+  env_file:
+    - ./docker_environ
+  environment:
+    VIRTUAL_HOST: api.mydomain.org
+    VIRTUAL_PORT: 8080
+  links:
+    - mongodb:mongodb    
+    - redis:redis
+  volumes_from:
+    - datashared
+  dns:    
+    - 172.17.0.1
+    - 8.8.8.8
