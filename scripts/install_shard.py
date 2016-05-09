@@ -7,6 +7,7 @@ docker-compose run --rm --no-deps cli python /scripts/install_shard.py
 
 # All remove
 docker-compose down -v --rmi local
+rm -rf mongodb redis
 
 replSetInitiate
     ERROR :  already initialized <class 'pymongo.errors.OperationFailure'>
@@ -109,13 +110,18 @@ def create_or_update_indexes(db, force_mode=False, background=False):
 
     """
     db[constants.COL_SERIES].create_index([
-        ('provider_name', ASCENDING), 
-        ("dataset_code", ASCENDING), 
-        ("key", ASCENDING)], 
-        name="series1", 
-        unique=True, 
+        ("slug", pymongo.HASHED)], 
         background=background)
     """
+    
+    db[constants.COL_SERIES].create_index([
+        ('provider_name', ASCENDING), 
+        ("dataset_code", ASCENDING), 
+        ("key", ASCENDING)
+        ], 
+        name="series1", 
+        #unique=True, 
+        background=background)
     
     db[constants.COL_SERIES].create_index([
         ("dimensions", ASCENDING)], 
@@ -162,13 +168,13 @@ def create_or_update_indexes(db, force_mode=False, background=False):
 
 print("Connect to first mongodb server...")
 try:
-    client_mongodb1 = MongoClient('mongodb1', 27018)
+    client_mongodb1 = MongoClient('mongodb1', 27017)
     config = {
         '_id': 'widukind', 
         'members': [
-            {'_id': 0, 'host': 'mongodb1:27018'}, 
-            {'_id': 1, 'host': 'mongodb2:27018'}, 
-            {'_id': 2, 'host': 'mongodb3:27018'}
+            {'_id': 0, 'host': 'mongodb1:27017', 'priority': 1}, 
+            {'_id': 1, 'host': 'mongodb2:27017', 'priority': 2}, 
+            {'_id': 2, 'host': 'mongodb3:27017', 'priority': 3}
         ]
     }
     client_mongodb1.admin.command("replSetInitiate", config)
@@ -185,7 +191,7 @@ while True:
     if cpt > max:
         abort()
     try:
-        mongodb1_replicaset = MongoClient('mongodb1', 27018, replicaset='widukind')
+        mongodb1_replicaset = MongoClient('mongodb1', 27017, replicaset='widukind')
         mongodb1_replicaset.admin.command("replSetGetStatus")
         break
     except Exception as err:
@@ -193,11 +199,30 @@ while True:
     time.sleep(1)
     print("wait...")
 
+
+print("Connect to first config server...")
+try:
+    client_mongoconfig1 = MongoClient('mongoconfig1', 27019)
+    config = {
+        '_id': 'configReplSet',
+        'configsvr': True, 
+        'members': [
+            {'_id': 0, 'host': 'mongoconfig1:27019'}, 
+            {'_id': 1, 'host': 'mongoconfig2:27019'}, 
+            {'_id': 2, 'host': 'mongoconfig3:27019'}
+        ]
+    }
+    client_mongoconfig1.admin.command("replSetInitiate", config)
+    print("Replicaset for config servers initialize: OK")
+except Exception as err:
+    print("ERROR : ", str(err))
+    abort()
+
 print("Connect to mongos router...")
 try:
     router = MongoClient('mongorouter1', 27017)
     print("Add shard...")
-    router.admin.command("addShard", "widukind/mongodb1:27018")
+    router.admin.command("addShard", "widukind/mongodb1:27017,mongodb2:27017,mongodb3:27017")
 except Exception as err:
     print("ERROR : ", str(err))
     abort()
@@ -209,7 +234,8 @@ print("Configure sharding for widukind database...")
 try:
     router.admin.command("enableSharding", "widukind")
     router.admin.command("shardCollection", "widukind.providers", key={ "name": 1 })
-    router.admin.command("shardCollection", "widukind.series", key={ "provider_name": 1, "dataset_code": 1, "key": 1 })
+    #router.admin.command("shardCollection", "widukind.series", key={ "provider_name": 1, "dataset_code": 1, "key": 1 })
+    router.admin.command("shardCollection", "widukind.series", key={ "slug": "hashed" }) #numInitialChunks: 8192
     router.admin.command("shardCollection", "widukind.datasets", key={ "provider_name": 1, "dataset_code": 1 })
     print("Configuration : OK")
 except Exception as err:
