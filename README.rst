@@ -201,9 +201,6 @@ Installation with Mongodb Sharding and Nginx proxy / dns discovery (comming soon
     # replSetGetStatus command
     $ docker exec -it mongodb1 mongo --port 27018 --eval 'rs.status();'
 
-    # Debug queries    
-    $ docker exec -it mongodb1 mongo --port 27018 --eval 'use widukind; db.setProfilingLevel(2);'
-
     #  db.printShardingStatus()
     $ docker exec -it mongorouter1 mongo --eval 'sh.status(true);'
     
@@ -232,9 +229,12 @@ Installation with Mongodb Sharding and Nginx proxy / dns discovery (comming soon
     docker-compose run --rm --no-deps cli dlstats mongo check
     
     # Load Fetcher BIS - CNFS dataset
-    $ docker-compose run --rm --no-deps cli dlstats fetchers run -S -C -l INFO -f BIS -d CNFS
+    $ docker-compose run --rm --no-deps cli dlstats fetchers run -S -C -l INFO -f BIS -d CNFS --not-remove --use-files
     
     $ docker-compose run --rm --no-deps cli dlstats fetchers report
+
+    # Debug queries (optional)    
+    $ docker exec -it mongodb1 mongo --port 27018 --eval 'use widukind; db.setProfilingLevel(2);'
     
     # Go to http://www.example.org or http://api.example.org
     
