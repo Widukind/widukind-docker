@@ -73,8 +73,6 @@ services:
      - "mongodb3:172.16.238.12"
     depends_on:
       - skydock
-    mem_limit: 1g
-    user: mongodb
 
   mongodb2:
     image: mongo:3.2.4
@@ -96,8 +94,6 @@ services:
      - "mongodb3:172.16.238.12"
     depends_on:
       - skydock
-    mem_limit: 1g
-    user: mongodb
 
   mongodb3:
     image: mongo:3.2.4
@@ -119,8 +115,6 @@ services:
      - "mongodb2:172.16.238.11"
     depends_on:
       - skydock
-    mem_limit: 1g
-    user: mongodb
 
   mongoconfig1:
     image: mongo:3.2.4
@@ -141,7 +135,6 @@ services:
     networks:
       app_net:
         ipv4_address: 172.16.238.20
-    user: mongodb
 
   mongorouter1:
     image: mongo:3.2.4
@@ -161,7 +154,6 @@ services:
         ipv4_address: 172.16.238.30
     depends_on:
       - skydock
-    user: mongodb
 
   redis:
     build:
@@ -177,7 +169,7 @@ services:
         ipv4_address: 172.16.238.40
     depends_on:
       - skydock
-    mem_limit: 512m
+    mem_limit: 1g
 
   cli:
     build:
@@ -215,7 +207,6 @@ services:
         ipv4_address: 172.16.238.42
     depends_on:
       - skydock
-    mem_limit: 1g
 
   api:
     build:
@@ -235,5 +226,4 @@ services:
         ipv4_address: 172.16.238.43
     depends_on:
       - skydock
-    mem_limit: 1g
       
