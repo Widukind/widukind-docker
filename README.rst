@@ -176,11 +176,14 @@ Installation with Mongodb Sharding and Nginx proxy / dns discovery (comming soon
     $ sudo git clone https://github.com/Widukind/widukind-docker.git widukind
     $ cd widukind
     
-    # Use docker-compose -f docker-compose-shard.yml or rename docker-compose-shard.yml to docker-compose.yml or export COMPOSE_FILE=docker-compose-shard.yml
+    $ export COMPOSE_FILE=docker-compose-shard.yml
 
     $ git clone https://github.com/Widukind/widukind-web.git
     $ git clone https://github.com/Widukind/widukind-api.git
     $ git clone https://github.com/Widukind/dlstats.git
+    
+    # Edit docker_environ and replace WIDUKIND_MONGODB_URL with:
+    WIDUKIND_MONGODB_URL=mongodb://mongodb/widukind?replicaset=widukind
     
     # Replace www.mydomain.org by your url for web site
     $ sudo sed -i 's/www.mydomain.org/www.example.org/' docker-compose-shard.yml
@@ -191,37 +194,47 @@ Installation with Mongodb Sharding and Nginx proxy / dns discovery (comming soon
     # Edit ./docker_environ for adap configuration
     $ vi ./docker_environ
     
-    $ docker-compose -f docker-compose-shard.yml pull
+    $ docker-compose up -d --build
     
-    $ docker-compose -f docker-compose-shard.yml up -d --build
-    
-    $ docker exec -it mongod1 mongo --port 27018
-    > rs.initiate( {
-       _id: "widukind",
-       version: 1,
-       members: [
-          { _id: 0, host: "mongodb1:27018" },
-          { _id: 1, host: "mongodb2:27018" },
-          { _id: 2, host: "mongodb3:27018" }
-       ]
-    })
-    > exit
+    $ docker-compose run --rm --no-deps cli python /scripts/install_shard.py
 
-    $ docker exec -it mongorouter1 mongo
-    > sh.addShard("widukind/mongodb1:27018")
-    > sh.status()
-    > exit
-    
-    #$ docker-compose run --rm --no-deps cli dlstats install
+    # replSetGetStatus command
+    $ docker exec -it mongodb1 mongo --port 27018 --eval 'rs.status();'
 
-    $ docker-compose run --rm --no-deps cli dlstats mongo reindex -S
+    # Debug queries    
+    $ docker exec -it mongodb1 mongo --port 27018 --eval 'use widukind; db.setProfilingLevel(2);'
+
+    #  db.printShardingStatus()
+    $ docker exec -it mongorouter1 mongo --eval 'sh.status(true);'
     
     $ docker-compose restart web
     
     $ docker-compose restart api
-
+    
+    $ docker-compose ps
+              Name                        Command               State                  Ports
+    -------------------------------------------------------------------------------------------------------
+    mongoconfig1               /entrypoint.sh mongod --co ...   Up       27017/tcp, 27019/tcp
+    mongodb1                   /entrypoint.sh mongod --re ...   Up       27017/tcp, 27018/tcp
+    mongodb2                   /entrypoint.sh mongod --re ...   Up       27017/tcp, 27018/tcp
+    mongodb3                   /entrypoint.sh mongod --re ...   Up       27017/tcp, 27018/tcp
+    mongorouter1               /entrypoint.sh mongos --co ...   Up       27017/tcp
+    skydns                     skydns -http 0.0.0.0:8080  ...   Up       53/udp, 8080/tcp
+    widukind040_api_1          gunicorn -c /code/docker/g ...   Up       8080/tcp
+    widukind040_cli_1          python3                          Exit 0
+    widukind040_datashared_1   /true                            Exit 0
+    widukind040_proxy_1        /app/docker-entrypoint.sh  ...   Up       443/tcp, 0.0.0.0:80->80/tcp
+    widukind040_redis_1        /entrypoint.sh redis-serve ...   Up       6379/tcp
+    widukind040_skydock_1      /go/bin/skydock -ttl 30 -e ...   Up
+    widukind040_web_1          gunicorn -c /code/docker/g ...   Up       8080/tcp
+    
+    # Check 
+    docker-compose run --rm --no-deps cli dlstats mongo check
+    
     # Load Fetcher BIS - CNFS dataset
     $ docker-compose run --rm --no-deps cli dlstats fetchers run -S -C -l INFO -f BIS -d CNFS
+    
+    $ docker-compose run --rm --no-deps cli dlstats fetchers report
     
     # Go to http://www.example.org or http://api.example.org
     
