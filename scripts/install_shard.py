@@ -166,19 +166,36 @@ def create_or_update_indexes(db, force_mode=False, background=False):
         background=background,
         partialFilterExpression={"count_series": {"$exists": True}})
 
-print("Connect to first mongodb server...")
+print("Replicaset initialize widukind1...")
 try:
     client_mongodb1 = MongoClient('mongodb1', 27017)
     config = {
-        '_id': 'widukind', 
+        '_id': 'widukind1', 
         'members': [
-            {'_id': 0, 'host': 'mongodb1:27017', 'priority': 1}, 
-            {'_id': 1, 'host': 'mongodb2:27017', 'priority': 2}, 
-            {'_id': 2, 'host': 'mongodb3:27017', 'priority': 3}
+            {'_id': 0, 'host': 'mongodb1:27017'}, 
+            {'_id': 1, 'host': 'mongodb2:27017'}, 
+            {'_id': 2, 'host': 'mongodb3:27017'}
         ]
     }
     client_mongodb1.admin.command("replSetInitiate", config)
-    print("Replicaset initialize: OK")
+    print("Replicaset widukind1 initialized.")
+except Exception as err:
+    print("ERROR : ", str(err))
+    abort()
+
+print("Replicaset initialize widukind2...")
+try:
+    client_mongodb4 = MongoClient('mongodb4', 27017)
+    config = {
+        '_id': 'widukind2', 
+        'members': [
+            {'_id': 0, 'host': 'mongodb4:27017'}, 
+            {'_id': 1, 'host': 'mongodb5:27017'}, 
+            {'_id': 2, 'host': 'mongodb6:27017'}
+        ]
+    }
+    client_mongodb4.admin.command("replSetInitiate", config)
+    print("Replicaset widukind2 initialized.")
 except Exception as err:
     print("ERROR : ", str(err))
     abort()
@@ -186,13 +203,17 @@ except Exception as err:
 cpt = 0
 max = 60
 while True:
-    print("Wait connect to replicaset...")
+    print("Wait connect to replicasets...")
     cpt += 1
     if cpt > max:
         abort()
     try:
-        mongodb1_replicaset = MongoClient('mongodb1', 27017, replicaset='widukind')
+        mongodb1_replicaset = MongoClient('mongodb1', 27017, replicaset='widukind1')
         mongodb1_replicaset.admin.command("replSetGetStatus")
+        
+        mongodb4_replicaset = MongoClient('mongodb4', 27017, replicaset='widukind2')
+        mongodb4_replicaset.admin.command("replSetGetStatus")
+        
         break
     except Exception as err:
         print("ERROR : ", str(err))
@@ -221,26 +242,41 @@ except Exception as err:
 print("Connect to mongos router...")
 try:
     router = MongoClient('mongorouter1', 27017)
-    print("Add shard...")
-    router.admin.command("addShard", "widukind/mongodb1:27017,mongodb2:27017,mongodb3:27017")
+    print("Add shards...")
+    router.admin.command("addShard", "widukind1/mongodb1:27017,mongodb2:27017,mongodb3:27017")
+    router.admin.command("addShard", "widukind2/mongodb4:27017,mongodb5:27017,mongodb6:27017")
 except Exception as err:
     print("ERROR : ", str(err))
     abort()
-
-print("Create indexes...")
-create_or_update_indexes(mongodb1_replicaset.widukind)
 
 print("Configure sharding for widukind database...")
 try:
     router.admin.command("enableSharding", "widukind")
     router.admin.command("shardCollection", "widukind.providers", key={ "name": 1 })
     #router.admin.command("shardCollection", "widukind.series", key={ "provider_name": 1, "dataset_code": 1, "key": 1 })
-    router.admin.command("shardCollection", "widukind.series", key={ "slug": "hashed" }) #numInitialChunks: 8192
-    router.admin.command("shardCollection", "widukind.datasets", key={ "provider_name": 1, "dataset_code": 1 })
+    router.admin.command("shardCollection", "widukind.series", key={ "slug": "hashed" }, unique=True) #numInitialChunks: 8192
+    router.admin.command("shardCollection", "widukind.datasets", key={ "provider_name": 1, "dataset_code": 1 }, unique=True)
     print("Configuration : OK")
 except Exception as err:
     print("ERROR : ", str(err))
     abort()
+
+cpt = 0
+max = 60
+while True:
+    print("Wait connect to mongodb...")
+    cpt += 1
+    if cpt > max:
+        abort()
+    try:
+        client = MongoClient('mongorouter1', 27017)
+        print("Create indexes...")
+        create_or_update_indexes(client.widukind)
+        break
+    except Exception as err:
+        print("ERROR : ", str(err))
+    time.sleep(1)
+    print("wait...")
 
 print("End configuration.")
 

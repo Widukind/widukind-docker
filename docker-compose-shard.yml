@@ -54,7 +54,7 @@ services:
   
   mongodb1:
     image: mongo:3.2.4
-    command: mongod --replSet widukind --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --rest --httpinterface
+    command: mongod --replSet widukind1 --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --rest --httpinterface
     volumes:
       - ./mongodb/mongodb1/data:/data/db
     volumes_from:
@@ -73,10 +73,12 @@ services:
      - "mongodb3:172.16.238.12"
     depends_on:
       - skydock
+    mem_limit: 1g
+    memswap_limit: 2g
 
   mongodb2:
     image: mongo:3.2.4
-    command: mongod --replSet widukind --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --rest --httpinterface
+    command: mongod --replSet widukind1 --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --rest --httpinterface
     volumes:
       - ./mongodb/mongodb2/data:/data/db
     volumes_from:
@@ -94,10 +96,12 @@ services:
      - "mongodb3:172.16.238.12"
     depends_on:
       - skydock
+    mem_limit: 1g
+    memswap_limit: 2g
 
   mongodb3:
     image: mongo:3.2.4
-    command: mongod --replSet widukind --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --rest --httpinterface
+    command: mongod --replSet widukind1 --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --rest --httpinterface
     volumes:
       - ./mongodb/mongodb3/data:/data/db
     volumes_from:
@@ -115,6 +119,77 @@ services:
      - "mongodb2:172.16.238.11"
     depends_on:
       - skydock
+    mem_limit: 1g
+    memswap_limit: 2g
+
+  mongodb4:
+    image: mongo:3.2.4
+    command: mongod --replSet widukind2 --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --rest --httpinterface
+    volumes:
+      - ./mongodb/mongodb4/data:/data/db
+    volumes_from:
+      - datashared
+    container_name: mongodb4
+    dns: 172.16.238.2
+    dns_search: docker
+    expose:
+      - "27018"
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.100
+    extra_hosts:
+     - "mongodb5:172.16.238.110"
+     - "mongodb6:172.16.238.120"
+    depends_on:
+      - skydock
+    mem_limit: 1g
+    memswap_limit: 2g
+
+  mongodb5:
+    image: mongo:3.2.4
+    command: mongod --replSet widukind2 --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --rest --httpinterface
+    volumes:
+      - ./mongodb/mongodb5/data:/data/db
+    volumes_from:
+      - datashared
+    container_name: mongodb5
+    dns: 172.16.238.2
+    dns_search: docker
+    expose:
+      - "27018"
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.110
+    extra_hosts:
+     - "mongodb4:172.16.238.100"
+     - "mongodb6:172.16.238.120"
+    depends_on:
+      - skydock
+    mem_limit: 1g
+    memswap_limit: 2g
+
+  mongodb6:
+    image: mongo:3.2.4
+    command: mongod --replSet widukind2 --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --rest --httpinterface
+    volumes:
+      - ./mongodb/mongodb6/data:/data/db
+    volumes_from:
+      - datashared
+    container_name: mongodb6
+    dns: 172.16.238.2
+    dns_search: docker
+    expose:
+      - "27018"
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.120
+    extra_hosts:
+     - "mongodb4:172.16.238.100"
+     - "mongodb5:172.16.238.110"
+    depends_on:
+      - skydock
+    mem_limit: 1g
+    memswap_limit: 2g
 
   mongoconfig1:
     image: mongo:3.2.4
@@ -123,6 +198,9 @@ services:
       - mongodb1:mongodb1
       - mongodb2:mongodb2
       - mongodb3:mongodb3
+      - mongodb4:mongodb4
+      - mongodb5:mongodb5
+      - mongodb6:mongodb6
     volumes:
       - ./mongodb/mongoconfig1/data:/data/db
     volumes_from:
@@ -135,6 +213,8 @@ services:
     networks:
       app_net:
         ipv4_address: 172.16.238.20
+    mem_limit: 1g
+    memswap_limit: 2g
 
   mongoconfig2:
     image: mongo:3.2.4
@@ -143,6 +223,9 @@ services:
       - mongodb1:mongodb1
       - mongodb2:mongodb2
       - mongodb3:mongodb3
+      - mongodb4:mongodb4
+      - mongodb5:mongodb5
+      - mongodb6:mongodb6
     volumes:
       - ./mongodb/mongoconfig2/data:/data/db
     volumes_from:
@@ -155,6 +238,8 @@ services:
     networks:
       app_net:
         ipv4_address: 172.16.238.21
+    mem_limit: 1g
+    memswap_limit: 2g
 
   mongoconfig3:
     image: mongo:3.2.4
@@ -163,6 +248,9 @@ services:
       - mongodb1:mongodb1
       - mongodb2:mongodb2
       - mongodb3:mongodb3
+      - mongodb4:mongodb4
+      - mongodb5:mongodb5
+      - mongodb6:mongodb6
     volumes:
       - ./mongodb/mongoconfig3/data:/data/db
     volumes_from:
@@ -175,6 +263,8 @@ services:
     networks:
       app_net:
         ipv4_address: 172.16.238.22
+    mem_limit: 1g
+    memswap_limit: 2g
 
   mongorouter1:
     image: mongo:3.2.4
@@ -186,6 +276,9 @@ services:
       - mongodb1:mongodb1
       - mongodb2:mongodb2
       - mongodb3:mongodb3
+      - mongodb4:mongodb4
+      - mongodb5:mongodb5
+      - mongodb6:mongodb6
     volumes_from:
       - datashared
     container_name: mongorouter1
@@ -194,6 +287,30 @@ services:
     networks:
       app_net:
         ipv4_address: 172.16.238.30
+    depends_on:
+      - skydock
+
+  mongorouter2:
+    image: mongo:3.2.4
+    command: mongos --configdb configReplSet/mongoconfig1:27019,mongoconfig2:27019,mongoconfig2:27019 --httpinterface
+    links:
+      - mongoconfig1:mongoconfig1
+      - mongoconfig2:mongoconfig2
+      - mongoconfig3:mongoconfig3
+      - mongodb1:mongodb1
+      - mongodb2:mongodb2
+      - mongodb3:mongodb3
+      - mongodb4:mongodb4
+      - mongodb5:mongodb5
+      - mongodb6:mongodb6
+    volumes_from:
+      - datashared
+    container_name: mongorouter2
+    dns: 172.16.238.2
+    dns_search: docker
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.31
     depends_on:
       - skydock
 
@@ -218,8 +335,11 @@ services:
       context: ./dlstats
     env_file:
       - ./docker_environ
+    environment:
+      WIDUKIND_MONGODB_URL: mongodb://mongorouter1,mongorouter2/widukind
     links:
-      - mongorouter1:mongodb
+      - mongorouter1:mongorouter1
+      - mongorouter2:mongorouter2
       - redis:redis
     volumes_from:
       - datashared
@@ -230,14 +350,19 @@ services:
         ipv4_address: 172.16.238.41
     depends_on:
       - skydock      
+    mem_limit: 2g
+    memswap_limit: 4g
 
   web:
     build:
       context: ./widukind-web
     env_file:
       - ./docker_environ
+    environment:
+      WIDUKIND_MONGODB_URL: mongodb://mongorouter1,mongorouter2/widukind
     links:
-      - mongorouter1:mongodb
+      - mongorouter1:mongorouter1
+      - mongorouter2:mongorouter2
       - redis:redis
     environment:
       VIRTUAL_HOST: www.mydomain.org
@@ -249,14 +374,19 @@ services:
         ipv4_address: 172.16.238.42
     depends_on:
       - skydock
+    mem_limit: 2g
+    memswap_limit: 4g
 
   api:
     build:
       context: ./widukind-api
     env_file:
       - ./docker_environ
+    environment:
+      WIDUKIND_MONGODB_URL: mongodb://mongorouter1,mongorouter2/widukind
     links:
-      - mongorouter1:mongodb
+      - mongorouter1:mongorouter1
+      - mongorouter2:mongorouter2
       - redis:redis
     environment:
       VIRTUAL_HOST: api.mydomain.org
@@ -268,4 +398,5 @@ services:
         ipv4_address: 172.16.238.43
     depends_on:
       - skydock
-      
+    mem_limit: 2g
+    memswap_limit: 4g
