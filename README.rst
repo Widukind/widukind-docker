@@ -2,19 +2,27 @@
 Widukind Docker
 ===============
 
-**Features:**
+**Includes:**
 
 * `Dlstats`_
 * `Widukind Web`_
 * `Widukind Rest Api`_
+* `MongoDB Server`_
+* `Redis Server`_
+* Nginx Proxy
+* DNS Cache Server
 
-Resume Installation
--------------------
+.. contents:: **Table of Contents**
+    :depth: 1
+    :backlinks: none
+
+Installation
+------------
 
 **Requires:**
 
-* Docker 1.9+
-* docker-compose 1.5+
+* Docker 1.10+
+* docker-compose 1.7+
 * sudo right or root access
 
 ::
@@ -22,29 +30,19 @@ Resume Installation
     $ sudo git clone https://github.com/Widukind/widukind-docker.git widukind
     $ cd widukind
 
-    $ git clone https://github.com/Widukind/docker-base.git common
-    $ docker build -t widukind/docker-base:0.1.0 common
-    $ docker tag widukind/docker-base:0.1.0 widukind/docker-base:latest
+    # Replace widukind.cepremap.org by your hostname for Widukind Web
+    $ sudo sed -i 's/widukind.cepremap.org/widukind.mydomain.org/' docker-compose.yml
     
-    $ git clone https://github.com/Widukind/widukind-web.git
-    $ git clone https://github.com/Widukind/widukind-api.git
-    $ git clone https://github.com/Widukind/dlstats.git
+    # Replace widukind-api.cepremap.org by your hostname for Widukind API
+    $ sudo sed -i 's/widukind-api.cepremap.org/api.mydomain.org/' docker-compose.yml
     
-    # Replace 1.1.1.1 with your ip address
-    $ sudo sed -i 's/HOST_BIND_WEB/1.1.1.1/' docker-compose.yml
-    
-    # Replace 1.1.1.2 with your ip address or change port in docker-compose.yml file
-    $ sudo sed -i 's/HOST_BIND_API/1.1.1.2/' docker-compose.yml
-    
-    # Edit ./docker_environ for adap configuration
+    # Edit ./docker_environ for customize configuration
     $ vi ./docker_environ
-    
-    $ docker-compose pull
     
     $ docker-compose up -d
     
-    # Go to http://1.1.1.1
-    
+    # Go to http://widukind.mydomain.org or http://widukind-api.mydomain.org
+   
 Configuration
 -------------
 
@@ -52,13 +50,22 @@ Edit ./docker_environ before launch docker-compose up
 
 ::
 
+    WIDUKIND_BASE_URL_API=http://widukind-api.cepremap.org/api/v1
     WIDUKIND_SECRET_KEY=examplesecretkey
     WIDUKIND_WEB_MAIL_DEFAULT_SENDER=root@localhost.com
     WIDUKIND_WEB_MAIL_ADMIN=root@localhost.com
-    WIDUKIND_WEB_SERVER_NAME=localhost
     WIDUKIND_WEB_USERNAME=admin
     WIDUKIND_WEB_PASSWORD=admin
-    WIDUKIND_WEB_MAIL_SERVER=localhost        
+    WIDUKIND_WEB_MAIL_SERVER=localhost
+    
+    WIDUKIND_API_WEB_URL=http://widukind.cepremap.org
+    WIDUKIND_API_SECRET_KEY=examplesecretkeyapi
+    WIDUKIND_API_MAIL_DEFAULT_SENDER=root@localhost.com
+    WIDUKIND_API_MAIL_ADMIN=root@localhost.com
+    WIDUKIND_API_USERNAME=admin
+    WIDUKIND_API_PASSWORD=admin
+    WIDUKIND_API_MAIL_SERVER=localhost
+            
     
 Resume for load datas
 ---------------------
@@ -70,9 +77,12 @@ Resume for load datas
     alias dlstats='docker-compose run --rm --no-deps cli dlstats'
     or
     alias dlstats_bash='docker-compose run --rm --no-deps cli bash'
-        
+
     # help with:
     dlstats --help
+    
+    # Create all indexes
+    dlstats mongo reindex
     
     # Provider list:    
     dlstats fetchers list
@@ -80,22 +90,22 @@ Resume for load datas
     # Datasets list for BIS:    
     dlstats fetchers datasets -f BIS
 
-    # Create or Update datatree for BIS (--force for replace)
-    dlstats fetchers datatree -f BIS
-
-    # Load Fetcher BIS - CNFS dataset
-    dlstats fetchers run -l ERROR -f BIS -d CNFS
-
-    # Load Fetcher BIS with before update datatree
-    dlstats fetchers run --datatree -l ERROR -f BIS -d CNFS
+    # Load BIS Fetcher
+    dlstats fetchers run --quiet -S -C -l INFO --datatree -f BIS --run-full -d CNFS
 
     # Load Fetcher BIS - All datasets
-    dlstats fetchers run -l ERROR -f BIS
+    dlstats fetchers run --quiet -S -C -l INFO --datatree -f BIS --run-full
 
     # Display report:
     dlstats fetchers report
     
+    # Other tasks after run or launch run command with --run-full option
+    dlstats fetchers tags -f BIS
+    dlstats fetchers consolidate -f BIS
+    
 .. _`Dlstats`: https://github.com/Widukind/dlstats
 .. _`Widukind Web`: https://github.com/Widukind/widukind-web
 .. _`Widukind Rest Api`: https://github.com/Widukind/widukind-api
+.. _`MongoDB Server`: http://www.mongodb.org
+.. _`Redis Server`: http://redis.io
 
