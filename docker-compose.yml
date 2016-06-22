@@ -1,57 +1,95 @@
-datashared:
-  image: tianon/true
-  volumes:
-    - ./widukind:/widukind
-    - ./tmp:/tmpdir
+version: '2'
 
-mongodb:
-  build: mongodb-docker
-  command: mongod --noauth --storageEngine wiredTiger --wiredTigerCacheSizeGB 1 --wiredTigerDirectoryForIndexes --httpinterface --cpu --directoryperdb
-  volumes:
-    - ./mongodb/data:/data/db
-  volumes_from:
-    - datashared
-  privileged: true
+networks:
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.16.238.0/24
+        gateway: 172.16.238.1
 
-redis:
-  build: redis-docker
-  command: redis-server --appendonly yes
-  volumes:
-    - ./redis/data:/data
-  volumes_from:
-    - datashared
-  privileged: true
+services:
 
-cli:
-  build: dlstats
-  env_file:
-    - ./docker_environ
-  links:
-    - mongodb:mongodb
-    - redis:redis
-  volumes_from:
-    - datashared
+    datashared:
+      image: tianon/true
+      volumes:
+        - ./widukind:/widukind
+        - ./tmp:/tmpdir
+
+    proxy:
+      image: jwilder/nginx-proxy
+      ports:
+        - "80:80"
+      volumes:
+        - /var/run/docker.sock:/tmp/docker.sock:ro
+      environment:
+        DEFAULT_HOST: widukind.cepremap.org
+        
+    dns:
+      image: andyshinn/dnsmasq
+      cap_add:
+        - NET_ADMIN
+      dns:    
+        - 8.8.8.8
+      networks:
+        default:
+          ipv4_address: 172.16.238.200
+
+    redis:
+      image: redis
+      command: redis-server --appendonly yes
+      volumes:
+        - ./redis/data:/data
+      volumes_from:
+        - datashared
+      mem_limit: 4g
+
+    mongodb:
+      image: mongo:3.2.7
+      command: mongod --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --directoryperdb
+      volumes:
+        - ./mongodb/data:/data/db
+      volumes_from:
+        - datashared
+
+    cli:
+      image: widukind/dlstats
+      env_file:
+        - ./docker_environ
+      environment:
+        WIDUKIND_CACHE_URL: simple
+      links:
+        - mongodb:mongodb
+        - redis:redis
+      volumes_from:
+        - datashared
+      dns:    
+        - 172.16.238.200
+        
+    web:
+      image: widukind/widukind-web
+      env_file:
+        - ./docker_environ
+      links:
+        - mongodb:mongodb    
+        - redis:redis
+      environment:
+        VIRTUAL_HOST: widukind.cepremap.org
+        VIRTUAL_PORT: 8080
+      volumes_from:
+        - datashared
     
-web:
-  build: widukind-web
-  env_file:
-    - ./docker_environ
-  links:
-    - mongodb:mongodb    
-    - redis:redis
-  ports:
-    - "HOST_BIND_WEB:80:8080"
-  volumes_from:
-    - datashared
-
-api:
-  build: widukind-api
-  env_file:
-    - ./docker_environ
-  links:
-    - mongodb:mongodb    
-    - redis:redis
-  ports:
-    - "HOST_BIND_API:80:8080"
-  volumes_from:
-    - datashared
+    api:
+      image: widukind/widukind-api
+      env_file:
+        - ./docker_environ
+      links:
+        - mongodb:mongodb    
+        - redis:redis
+      environment:
+        VIRTUAL_HOST: widukind-api.cepremap.org
+        VIRTUAL_PORT: 8080
+      volumes_from:
+        - datashared
+        
