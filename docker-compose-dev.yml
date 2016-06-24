@@ -1,0 +1,99 @@
+version: '2'
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+      - subnet: 172.16.238.0/24
+        gateway: 172.16.238.1
+
+services:
+
+    datashared:
+      image: tianon/true
+      volumes:
+        - ./widukind:/widukind
+        - ./tmp:/tmpdir
+
+    proxy:
+      image: jwilder/nginx-proxy
+      ports:
+        - "80:80"
+      volumes:
+        - /var/run/docker.sock:/tmp/docker.sock:ro
+      environment:
+        DEFAULT_HOST: widukind.cepremap.org
+        
+    dns:
+      image: andyshinn/dnsmasq
+      cap_add:
+        - NET_ADMIN
+      dns:    
+        - 8.8.8.8
+      networks:
+        default:
+          ipv4_address: 172.16.238.200
+
+    redis:
+      image: redis
+      command: redis-server --appendonly yes
+      volumes:
+        - ./redis/data:/data
+      volumes_from:
+        - datashared
+      mem_limit: 4g
+
+    mongodb:
+      image: mongo:3.2.7
+      command: mongod --noauth --storageEngine wiredTiger --wiredTigerDirectoryForIndexes --directoryperdb
+      volumes:
+        - ./mongodb/data:/data/db
+      volumes_from:
+        - datashared
+
+    cli:
+      build: github.com/Widukind/dlstats.git
+      env_file:
+        - ./docker_environ
+      environment:
+        WIDUKIND_CACHE_URL: simple
+      links:
+        - mongodb:mongodb
+        - redis:redis
+      volumes_from:
+        - datashared
+      dns:    
+        - 172.16.238.200
+        
+    web:
+      build: github.com/Widukind/widukind-web.git
+      env_file:
+        - ./docker_environ
+      links:
+        - mongodb:mongodb    
+        - redis:redis
+      environment:
+        VIRTUAL_HOST: widukind.cepremap.org
+        VIRTUAL_PORT: 8080
+      volumes_from:
+        - datashared
+      ports:
+        - "8080:8080"
+    
+    api:
+      build: github.com/Widukind/widukind-api.git
+      env_file:
+        - ./docker_environ
+      links:
+        - mongodb:mongodb    
+        - redis:redis
+      environment:
+        VIRTUAL_HOST: widukind-api.cepremap.org
+        VIRTUAL_PORT: 8080
+      volumes_from:
+        - datashared
+      ports:
+        - "8081:8080"
+        
