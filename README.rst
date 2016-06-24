@@ -102,6 +102,22 @@ Resume for load datas
     # Other tasks after run or launch run command with --run-full option
     dlstats fetchers tags -f BIS
     dlstats fetchers consolidate -f BIS
+
+Installation - Development mode
+-----------------------------
+
+::
+
+    $ sudo git clone https://github.com/Widukind/widukind-docker.git widukind-dev
+    $ cd widukind-dev
+
+    $ docker-compose -f docker-compose-dev.yml up -d
+    OR
+    mv docker-compose.yml docker-compose-prod.yml
+    mv docker-compose-dev.yml docker-compose.yml
+    $ docker-compose up -d
+    
+    # Go to http://YOUR_HOST:8080 or http://YOUR_HOST:8081 for Rest API
     
 .. _`Dlstats`: https://github.com/Widukind/dlstats
 .. _`Widukind Web`: https://github.com/Widukind/widukind-web
